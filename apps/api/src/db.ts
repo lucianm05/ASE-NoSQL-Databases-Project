@@ -1,5 +1,8 @@
-import {MongoClient} from 'mongodb'
+import { Sequelize } from "sequelize";
 
-// const uri = 
+const sequelize = new Sequelize({
+  dialect: "sqlite",
+  storage: "./db.db",
+});
 
-// const client = new MongoClient()
+export default sequelize;
