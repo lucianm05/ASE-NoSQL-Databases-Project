@@ -5,7 +5,7 @@ interface Props {
   label: string;
 }
 
-const Fieldset: Component<Props> = ({ children, label }) => {
+export const Fieldset: Component<Props> = ({ children, label }) => {
   if (Children.count(children) > 1) {
     throw new Error("Fieldset must have only one Input child");
   }
@@ -27,4 +27,3 @@ const Fieldset: Component<Props> = ({ children, label }) => {
   );
 };
 
-export default Fieldset;

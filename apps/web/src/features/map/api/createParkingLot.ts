@@ -1,8 +1,9 @@
 import dict from "@/constants/dict";
 import queryKeys from "@/constants/query-keys";
 import useAlert from "@/features/alert/alert.store";
+import { useParkingLots } from "@/features/map/api/getParkingLots";
 import { fetcher, FetchError } from "@/utils/fetcher";
-import { useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import { ParkingLotPayload } from "types";
 
 export const createParkingLot = async (payload: ParkingLotPayload) => {
@@ -14,29 +15,25 @@ export const createParkingLot = async (payload: ParkingLotPayload) => {
 };
 
 export const useCreateParkingLot = () => {
-  const { success, error } = useAlert();
-  const queryClient = useQueryClient();
+  const alert = useAlert();
+  const { refetch } = useParkingLots();
 
-  const createParkingLotHandler = async (payload: ParkingLotPayload) => {
-    try {
-      const res = await createParkingLot(payload);
-      await queryClient.refetchQueries({ queryKey: queryKeys.parkingLots });
-      success(dict.en.success);
+  return useMutation({
+    mutationFn: createParkingLot,
+    onSuccess: async (res) => {
+      if (!res) return;
+      await refetch();
+      alert.success(dict.en.success);
+    },
+    onError: (error) => {
+      if (!(error instanceof FetchError)) return;
 
-      return res;
-    } catch (err) {
-      console.error(err);
-
-      if (!(err instanceof FetchError)) return;
-
-      if (err.response.status === 400) {
-        error(dict.en.missing_or_invalid_values);
+      if (error.response.status === 400) {
+        alert.error(dict.en.missing_or_invalid_values);
         return;
       }
 
-      error(err.data.message);
-    }
-  };
-
-  return createParkingLotHandler;
+      alert.error(error.data.message);
+    },
+  });
 };

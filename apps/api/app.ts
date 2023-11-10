@@ -2,6 +2,7 @@ require("dotenv").config();
 import { config } from "config";
 import cors from "cors";
 import express, { Express } from "express";
+import { mongoClient } from "./src/mongo";
 
 import parkingLotRoutes from "./src/routes/parking-lot.route";
 
@@ -25,5 +26,10 @@ app.use(
 app.use("/parking-lot", parkingLotRoutes);
 
 app.listen(config.API_PORT, async () => {
+  try {
+    await mongoClient.connect();
+  } catch (err) {
+    console.error(err);
+  }
   console.log(`API started on port ${config.API_PORT}`);
 });

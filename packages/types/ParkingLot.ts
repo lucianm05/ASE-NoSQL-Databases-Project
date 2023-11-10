@@ -1,4 +1,4 @@
-import { LocationDTO, BaseEntity, Payload } from ".";
+import { LocationDTO, BaseEntity, Payload, LocationPayload } from ".";
 
 export interface ParkingLotDTO extends BaseEntity {
   name?: string;
@@ -9,4 +9,6 @@ export interface ParkingLotDTO extends BaseEntity {
 }
 
 export interface ParkingLotPayload
-  extends Payload<Omit<ParkingLotDTO, "occupiedSpaces">> {}
+  extends Payload<Omit<ParkingLotDTO, "occupiedSpaces" | "location">> {
+  location?: LocationPayload;
+}

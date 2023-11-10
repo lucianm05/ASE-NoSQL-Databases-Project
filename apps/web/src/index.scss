@@ -7,3 +7,7 @@
     @apply font-body text-slate-900;
   }
 }
+
+.leaflet-container {
+  @apply w-full h-screen;
+}

@@ -1,9 +1,10 @@
 import { Component } from "@/types";
+import { cn } from "@/utils";
 
 const themes = {
   none: "",
-  default: "bg-white",
-  danger: "bg-red-500 text-white",
+  default: "bg-white disabled:bg-slate-200",
+  danger: "bg-red-500 text-white disabled:bg-red-800",
 } as const;
 interface Props
   extends React.DetailedHTMLProps<
@@ -13,23 +14,26 @@ interface Props
   theme?: keyof typeof themes;
 }
 
-const Button: Component<Props> = ({
+export const Button: Component<Props> = ({
   children,
   type = "button",
   theme = "default",
+  className,
   ...props
 }) => {
   return (
     <button
       {...props}
       type={type}
-      className={`w-max ${theme !== "none" ? "px-4 py-1 border rounded" : ""} ${
-        themes[theme]
-      } ${props.className}`}
+      className={cn(
+        "w-max",
+        themes[theme],
+        theme !== "none" &&
+          "px-4 py-1 border rounded disabled:cursor-not-allowed",
+        className
+      )}
     >
       {children}
     </button>
   );
 };
-
-export default Button;

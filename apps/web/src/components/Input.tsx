@@ -6,7 +6,7 @@ interface Props
     HTMLInputElement
   > {}
 
-const Input = forwardRef<HTMLInputElement, Props>(({ ...props }, ref) => {
+export const Input = forwardRef<HTMLInputElement, Props>(({ ...props }, ref) => {
   return (
     <input
       {...props}
@@ -16,4 +16,3 @@ const Input = forwardRef<HTMLInputElement, Props>(({ ...props }, ref) => {
   );
 });
 
-export default Input;

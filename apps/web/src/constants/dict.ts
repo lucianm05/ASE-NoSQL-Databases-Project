@@ -24,6 +24,10 @@ const dict = {
     reserve: "Reserve",
     cancel: "Cancel",
     missing_or_invalid_values: "Missing or invalid values",
+    are_you_sure_you_want_to_delete_parking_lot:
+      "Are you sure you want to delete parking lot",
+    add_new_parking_lot: "Add new parking lot",
+    manage_parking_lot: "Manage parking lot",
   },
 };
 

@@ -4,8 +4,10 @@ export interface LocationDTO extends BaseEntity {
   street?: string;
   city?: string;
   country?: string;
-  lat?: number;
-  lng?: number;
+  shape?: {
+    type?: "Point";
+    coordinates?: number[];
+  };
 }
 
 export interface LocationPayload extends Payload<LocationDTO> {}

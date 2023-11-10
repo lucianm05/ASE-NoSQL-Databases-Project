@@ -1,10 +1,8 @@
-import Location from "@/models/location.model";
-import ParkingLot from "@/models/parking-lot.model";
+import { collections, mongoClient } from "@/mongo";
 import { Request, Response } from "express";
-import { LocationPayload, ParkingLotPayload } from "types";
-import { z, ZodTypeAny } from "zod";
-import { mongoClient, collections } from "@/mongo";
 import { ObjectId } from "mongodb";
+import { LocationPayload, ParkingLotPayload } from "types";
+import { ZodTypeAny, z } from "zod";
 
 const validateCreateData = (body: ParkingLotPayload, optional?: boolean) => {
   let schema = z.object<Record<keyof ParkingLotPayload, ZodTypeAny>>({
@@ -14,9 +12,10 @@ const validateCreateData = (body: ParkingLotPayload, optional?: boolean) => {
     location: z.object<Record<keyof LocationPayload, ZodTypeAny>>({
       city: z.string(),
       country: z.string(),
-      lat: z.number(),
-      lng: z.number(),
       street: z.string(),
+      shape: z.object({
+        coordinates: z.array(z.number()),
+      }),
     }),
   });
 
@@ -29,16 +28,44 @@ const validateCreateData = (body: ParkingLotPayload, optional?: boolean) => {
 
 export const getParkingLots = async (req: Request, res: Response) => {
   try {
-    await mongoClient.connect();
+    const { bounds } = req.query;
 
-    const parkingLots = await collections.parkingLots.find().toArray();
+    const filters: Record<string, any> = {};
+
+    try {
+      if (bounds && typeof bounds === "string") {
+        const [ne, sw] = decodeURIComponent(bounds).split("&");
+
+        const getCoords = (input: string) =>
+          input
+            .split("=")[1]
+            .split(",")
+            .map((c) => Number(c) || undefined);
+
+        const [n, e] = getCoords(ne);
+        const [s, w] = getCoords(sw);
+
+        if (n && e && s && w) {
+          filters["location.shape"] = {
+            $geoWithin: {
+              $box: [
+                [n, e],
+                [s, w],
+              ],
+            },
+          };
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    const parkingLots = await collections.parkingLots.find(filters).toArray();
 
     return res.status(200).json(parkingLots);
   } catch (err: unknown) {
     console.error(err);
     return res.status(500).json({ message: (err as Error).message });
-  } finally {
-    await mongoClient.close();
   }
 };
 
@@ -52,16 +79,22 @@ export const createParkingLot = async (req: Request, res: Response) => {
       return res.status(400).json({ message: validation.error.flatten() });
     }
 
-    await mongoClient.connect();
-
-    const parkingLot = await collections.parkingLots.insertOne(body);
+    const parkingLot = await collections.parkingLots.insertOne({
+      ...body,
+      occupiedSpaces: 0,
+      location: {
+        ...body.location,
+        shape: {
+          type: "Point",
+          coordinates: body.location?.shape?.coordinates || [],
+        },
+      },
+    });
 
     return res.status(200).json({ id: parkingLot.insertedId });
   } catch (err: unknown) {
     console.error(err);
     return res.status(500).json({ message: (err as Error).message });
-  } finally {
-    await mongoClient.close();
   }
 };
 
@@ -75,8 +108,6 @@ export const editParkingLot = async (req: Request, res: Response) => {
     if (!validation.success) {
       return res.status(400).json({ message: validation.error.flatten() });
     }
-
-    await mongoClient.connect();
 
     const objectId = new ObjectId(id);
 
@@ -98,16 +129,12 @@ export const editParkingLot = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     console.error(err);
     return res.status(500).json({ message: (err as Error).message });
-  } finally {
-    mongoClient.close();
   }
 };
 
 export const reserveParkingLot = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    await mongoClient.connect();
 
     const objectId = new ObjectId(id);
 
@@ -145,16 +172,12 @@ export const reserveParkingLot = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     console.error(err);
     return res.status(500).json({ message: (err as Error).message });
-  } finally {
-    await mongoClient.close();
   }
 };
 
 export const deleteParkingLot = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    await mongoClient.connect();
 
     const objectId = new ObjectId(id);
 
@@ -173,7 +196,5 @@ export const deleteParkingLot = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     console.error(err);
     return res.status(500).json({ message: (err as Error).message });
-  } finally {
-    await mongoClient.close();
   }
 };

@@ -1,11 +1,12 @@
 import { VoidFn } from "@/types";
-import { ReactElement } from "react";
+import { ReactElement, ReactNode } from "react";
 import { create } from "zustand";
 
 interface Config {
-  header?: ReactElement;
-  body?: ReactElement;
-  footer?: ReactElement;
+  header?: ReactNode;
+  body?: ReactNode;
+  footer?: ReactNode;
+  onClose?: VoidFunction;
 }
 
 interface DrawerStore {

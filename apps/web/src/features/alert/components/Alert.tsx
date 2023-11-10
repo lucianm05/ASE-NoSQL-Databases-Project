@@ -1,12 +1,13 @@
 import { ReactComponent as IconClose } from "@/assets/icons/close.svg";
-import Button from "@/components/Button";
+import { Button } from "@/components/Button";
 import dict from "@/constants/dict";
 import useAlert from "@/features/alert/alert.store";
-import type { Alert } from "@/types";
+import type { Alert as TAlert } from "@/types";
+import { cn } from "@/utils";
 import { useEffect } from "react";
 import classes from "./Alert.module.scss";
 
-const Alert = ({ id, type, message }: Alert) => {
+export const Alert = ({ id, type, message }: TAlert) => {
   const { closeAlert } = useAlert();
 
   useEffect(() => {
@@ -21,9 +22,12 @@ const Alert = ({ id, type, message }: Alert) => {
 
   return (
     <div
-      className={`w-max absolute left-1/2 -translate-x-1/2 top-4 px-4 py-2 rounded-full text-lg pointer-events-auto shadow-md flex items-center space-x-2 text-slate-50 ${
-        classes.alert
-      } ${type === "success" ? "bg-green-500" : "bg-red-500"}`}
+      role="alert"
+      className={cn(
+        "w-max absolute left-1/2 -translate-x-1/2 top-4 px-4 py-2 rounded-full text-lg pointer-events-auto shadow-md flex items-center space-x-2 text-slate-50",
+        classes.alert,
+        type === "success" ? "bg-green-500" : "bg-red-500"
+      )}
     >
       <span>{message}</span>
 
@@ -41,5 +45,3 @@ const Alert = ({ id, type, message }: Alert) => {
     </div>
   );
 };
-
-export default Alert;

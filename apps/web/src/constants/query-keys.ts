@@ -1,5 +1,8 @@
 const queryKeys = {
-  parkingLots: "parking-lots",
+  parkingLots: {
+    default: "parking-lots",
+    get: (query?: string) => ["parking-lots", query],
+  },
 };
 
 export default queryKeys;

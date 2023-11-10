@@ -1,44 +1,42 @@
 import dict from "@/constants/dict";
 import queryKeys from "@/constants/query-keys";
 import useAlert from "@/features/alert/alert.store";
+import { useParkingLots } from "@/features/map/api/getParkingLots";
 import { MessageResponse } from "@/types";
 import { fetcher, FetchError } from "@/utils/fetcher";
-import { useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import { ParkingLotPayload } from "types";
 
-export const editParkingLot = async (
-  id: number,
-  payload: ParkingLotPayload
-) => {
-  const res = await fetcher<MessageResponse>(`/parking-lot/${id}`, {
+interface EditParkingLotPayload extends ParkingLotPayload {
+  _id: string;
+}
+
+export const editParkingLot = async (payload: EditParkingLotPayload) => {
+  const res = await fetcher<MessageResponse>(`/parking-lot/${payload._id}`, {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, _id: undefined }),
   });
   return res;
 };
 
 export const useEditParkingLot = () => {
-  const { success, error } = useAlert();
-  const queryClient = useQueryClient();
+  const alert = useAlert();
 
-  const editParkingLotHandler = async (
-    id: number,
-    payload: ParkingLotPayload
-  ) => {
-    try {
-      const res = await editParkingLot(id, payload);
-      await queryClient.refetchQueries({ queryKey: queryKeys.parkingLots });
-      success(dict.en.success);
+  const { refetch } = useParkingLots();
 
-      return res;
-    } catch (err) {
-      console.error(err);
+  return useMutation({
+    mutationFn: editParkingLot,
+    onSuccess: async (res) => {
+      if (!res) return;
+      await refetch();
+      alert.success(dict.en.success);
+    },
+    onError: (error) => {
+      console.error(error);
 
-      if (!(err instanceof FetchError)) return;
+      if (!(error instanceof FetchError)) return;
 
-      error(err.data.message);
-    }
-  };
-
-  return editParkingLotHandler;
+      alert.error(error.data.message);
+    },
+  });
 };

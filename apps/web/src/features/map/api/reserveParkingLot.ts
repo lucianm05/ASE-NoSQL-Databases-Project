@@ -1,11 +1,11 @@
 import dict from "@/constants/dict";
-import queryKeys from "@/constants/query-keys";
 import useAlert from "@/features/alert/alert.store";
+import { useParkingLots } from "@/features/map/api/getParkingLots";
 import { MessageResponse } from "@/types";
 import { fetcher, FetchError } from "@/utils/fetcher";
-import { useQueryClient } from "react-query";
+import { useMutation } from "react-query";
 
-export const reserveParkingLot = async (id: number) => {
+export const reserveParkingLot = async (id: string) => {
   const res = await fetcher<MessageResponse>(`/parking-lot/${id}`, {
     method: "PATCH",
   });
@@ -13,24 +13,20 @@ export const reserveParkingLot = async (id: number) => {
 };
 
 export const useReserverParkingLot = () => {
-  const { success, error } = useAlert();
-  const queryClient = useQueryClient();
+  const alert = useAlert();
+  const { refetch } = useParkingLots();
 
-  const reserveParkingLotHandler = async (id: number) => {
-    try {
-      const res = await reserveParkingLot(id);
-      await queryClient.refetchQueries({ queryKey: queryKeys.parkingLots });
-      success(dict.en.success);
-
-      return res;
-    } catch (err) {
-      console.error(err);
-
-      if (!(err instanceof FetchError)) return;
-
-      error(err.data.message);
-    }
-  };
-
-  return reserveParkingLotHandler;
+  return useMutation({
+    mutationFn: reserveParkingLot,
+    onSuccess: async (res) => {
+      if (!res) return;
+      await refetch();
+      alert.success(dict.en.success);
+    },
+    onError: (error) => {
+      console.error(error);
+      if (!(error instanceof FetchError)) return;
+      alert.error(error.data.message);
+    },
+  });
 };
