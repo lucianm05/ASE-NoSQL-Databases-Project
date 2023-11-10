@@ -18,5 +18,6 @@ export const useParkingLots = () => {
     queryFn: async () => await getParkingLots(query),
     queryKey: queryKeys.parkingLots.get(query),
     refetchOnWindowFocus: false,
+    keepPreviousData: true
   });
 };

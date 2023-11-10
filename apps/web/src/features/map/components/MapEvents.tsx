@@ -10,6 +10,22 @@ export const MapEvents = () => {
   const { setMarkerPosition } = useMapStore();
   const navigate = useNavigate();
 
+  const updateSearchBounds = () => {
+    const bounds = map.getBounds();
+
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+
+    const search = new URLSearchParams({
+      bounds: new URLSearchParams({
+        ne: `${ne.lng},${ne.lat}`,
+        sw: `${sw.lng},${sw.lat}`,
+      }).toString(),
+    });
+
+    navigate({ pathname: "/", search: search.toString() });
+  };
+
   const map = useMapEvents({
     click(event) {
       map.setView(event.latlng);
@@ -34,19 +50,11 @@ export const MapEvents = () => {
     },
 
     dragend() {
-      const bounds = map.getBounds();
+      updateSearchBounds();
+    },
 
-      const ne = bounds.getNorthEast();
-      const sw = bounds.getSouthWest();
-
-      const search = new URLSearchParams({
-        bounds: new URLSearchParams({
-          ne: `${ne.lng},${ne.lat}`,
-          sw: `${sw.lng},${sw.lat}`,
-        }).toString(),
-      });
-
-      navigate({ pathname: "/", search: search.toString() });
+    zoom() {
+      updateSearchBounds();
     },
   });
 
