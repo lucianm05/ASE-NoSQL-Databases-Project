@@ -1,6 +1,6 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 
-const uri = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}/parking`;
+const uri = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}`;
 
 const mongoClient = new MongoClient(uri, {
   serverApi: {
@@ -13,7 +13,8 @@ const mongoClient = new MongoClient(uri, {
 const db = mongoClient.db("parking");
 
 const collections = {
-  parkingLots: db.collection("parking-lots"),
+  parkingLots: db.collection("parking_lots"),
+  reservations: db.collection("reservations"),
 };
 
 export { mongoClient, db, collections };

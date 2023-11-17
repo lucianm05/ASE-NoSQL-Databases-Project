@@ -60,7 +60,36 @@ export const getParkingLots = async (req: Request, res: Response) => {
       console.error(err);
     }
 
-    const parkingLots = await collections.parkingLots.find(filters).toArray();
+    const parkingLots = await collections.parkingLots
+      .aggregate([
+        {
+          $match: filters,
+        },
+        {
+          $lookup: {
+            from: "reservations",
+            localField: "_id",
+            foreignField: "parkingLotId",
+            as: "reservations",
+            pipeline: [
+              {
+                $match: { expiresAt: { $gt: new Date() } },
+              },
+            ],
+          },
+        },
+        {
+          $addFields: {
+            occupiedSpaces: { $size: "$reservations" },
+          },
+        },
+        {
+          $project: {
+            reservations: 0,
+          },
+        },
+      ])
+      .toArray();
 
     return res.status(200).json(parkingLots);
   } catch (err: unknown) {
@@ -81,7 +110,6 @@ export const createParkingLot = async (req: Request, res: Response) => {
 
     const parkingLot = await collections.parkingLots.insertOne({
       ...body,
-      occupiedSpaces: 0,
       location: {
         ...body.location,
         shape: {
@@ -147,24 +175,26 @@ export const reserveParkingLot = async (req: Request, res: Response) => {
         .status(404)
         .json({ message: `Parking lot with id ${id} does not exist.` });
 
+    const occupiedSpaces = await collections.reservations.countDocuments({
+      parkingLotId: { $eq: objectId },
+      expiresAt: { $gt: new Date() },
+    });
+
     if (
-      parkingLot.occupiedSpaces != undefined &&
+      occupiedSpaces != undefined &&
       parkingLot.capacity != undefined &&
-      parkingLot.occupiedSpaces >= parkingLot.capacity
+      occupiedSpaces >= parkingLot.capacity
     ) {
       return res
         .status(401)
         .json({ message: `Parking lot with id ${id} is at full capacity.` });
     }
 
-    await collections.parkingLots.updateOne(
-      { _id: { $eq: objectId } },
-      {
-        $inc: {
-          occupiedSpaces: 1,
-        },
-      }
-    );
+    await collections.reservations.insertOne({
+      parkingLotId: objectId,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
 
     return res
       .status(200)
@@ -191,6 +221,9 @@ export const deleteParkingLot = async (req: Request, res: Response) => {
         .json({ message: `Parking lot with id ${id} does not exist.` });
 
     await collections.parkingLots.deleteOne({ _id: { $eq: objectId } });
+    await collections.reservations.deleteMany({
+      parkingLotId: { $eq: objectId },
+    });
 
     return res.status(200).json({ message: "Parking lot was deleted." });
   } catch (err: unknown) {
